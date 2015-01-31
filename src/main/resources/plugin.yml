@@ -1,0 +1,4 @@
+name: MorseChat
+version: 0.1
+author: LaxWasHere
+main: net.poweredbyscience.morsechat.MorseChat
