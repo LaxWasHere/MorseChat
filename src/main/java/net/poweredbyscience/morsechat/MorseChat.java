@@ -25,7 +25,7 @@ import java.util.*;
 public class MorseChat extends JavaPlugin implements Listener {
     private static ArrayList<UUID> morsers = new ArrayList<>();
     private static HashMap<Character, String> letterSets = new HashMap<>();
-    private static HashMap<String, Pair<String, Pair<String, Set<Player>>>> messageQueue = new HashMap<>();
+    private static HashMap<String, MessageDetails> messageQueue = new HashMap<>();
     private boolean isPlaying = false;
     private Sound clickSound = Sound.UI_BUTTON_CLICK;
 
@@ -105,7 +105,7 @@ public class MorseChat extends JavaPlugin implements Listener {
     public void onChat(AsyncPlayerChatEvent ev) {
         Player p = ev.getPlayer();
         if (isPlaying) {
-            messageQueue.put(p.getName(), new Pair<>(translate(ev.getMessage()), new Pair<>(ev.getFormat(), ev.getRecipients())));
+            messageQueue.put(p.getName(), new MessageDetails(translate(ev.getMessage()), ev.getFormat(), ev.getRecipients()));
             p.sendMessage(ChatColor.AQUA + "Your message has been queued");
         } else {
             for (Player playa : ev.getRecipients()) {
@@ -151,13 +151,13 @@ public class MorseChat extends JavaPlugin implements Listener {
             private void playNext() {
                 if (!messageQueue.isEmpty()) {
                     String from = messageQueue.keySet().iterator().next();
-                    String message = messageQueue.get(from).getFirst();
-                    for (Player p : messageQueue.get(from).getSecond().getSecond()) {
+                    String message = messageQueue.get(from).getMessage();
+                    for (Player p : messageQueue.get(from).getRecipients()) {
                         if (morsers.contains(p.getUniqueId())) {
                             p.sendMessage(ChatColor.AQUA + ">Playing message from " + from);
                             doSound(p, message);
                         } else {
-                            String format = messageQueue.get(from).getSecond().getFirst();
+                            String format = messageQueue.get(from).getFormat();
                             p.sendMessage(String.format(format, from, message));
                         }
                     }
@@ -167,23 +167,48 @@ public class MorseChat extends JavaPlugin implements Listener {
         }.runTaskTimer(this, 5, 5);
     }
 
-    class Pair<U, T> {
-        U a;
-        T b;
+    class ChatDetails {
+        String format;
+        Set<Player> recipients;
 
-        Pair(U a, T b) {
-            this.a = a;
-            this.b = b;
+        ChatDetails(AsyncPlayerChatEvent ev) {
+            format = ev.getFormat();
+            recipients = ev.getRecipients();
         }
 
-        U getFirst() {
-            return a;
+        ChatDetails(ChatDetails c) {
+            format = c.getFormat();
+            recipients = c.recipients;
         }
 
-        T getSecond() {
-            return b;
+        private ChatDetails() {
+
+        }
+
+        Set<Player> getRecipients() {
+            return recipients;
+        }
+
+        String getFormat() {
+            return format;
+        }
+
+    }
+
+    class MessageDetails extends ChatDetails {
+        String message;
+        String format;
+        Set<Player> recipients;
+
+        MessageDetails(String message, String format, Set<Player> recipients) {
+            this.message = message;
+            this.format = format;
+            this.recipients = recipients;
+        }
+
+        String getMessage() {
+            return message;
         }
     }
 
 }
-
